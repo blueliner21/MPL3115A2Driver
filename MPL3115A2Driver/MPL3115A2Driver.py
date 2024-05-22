@@ -1,10 +1,15 @@
 from machine import Pin, I2C
+import time
 
 who_am_i = 0x0C
 device_id = [0xC4]
+CTRL_REG1 = 0x26
+OUT_T_MSB = 0x04
+OUT_T_LSB = 0x05
 
 class MPL3115A2_Altimeter:
-    
+
+   
 
     def __init__(self, i2c: I2C, ADDR: int):
         self.i2c = i2c
@@ -18,8 +23,20 @@ class MPL3115A2_Altimeter:
             print("No Comms or Bad Chip") #ToDo: This should raise an exception 
         
     
-    def GetStationPressure(self):
-        pass
+    def TestDevieAltimeter(self):
+       i2c.writeto(self.ADDR,bytearray([0x26,0xB8]))
+       i2c.writeto(self.ADDR,bytearray([0x13,0x07]))
+       i2c.writeto(self.ADDR,bytearray([0x26,0xB9]))
+       time.sleep_ms(800)
+       STA = i2c.readfrom_mem(self.ADDR,0x00,1)
+       #STA = i2c.readfrom(self.ADDR,1)
+       print(STA)
+       data = i2c.readfrom(self.ADDR,5)
+       print(data)
+      
+        
+        #print(TempMSB)
+        #print(TempLSB)
 
 
 
@@ -31,5 +48,6 @@ if __name__ == "__main__":
     i2c = I2C(ID, scl = Pin(SCL), sda = Pin(SDA), freq=100000)
     altimeter = MPL3115A2_Altimeter(i2c, ADDR)
     altimeter.ConnectAndVerify()
+    altimeter.TestDevieAltimeter()
    
     
