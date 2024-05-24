@@ -23,16 +23,24 @@ class MPL3115A2_Altimeter:
             print("No Comms or Bad Chip") #ToDo: This should raise an exception 
         
     
-    def TestDevieAltimeter(self):
-       i2c.writeto(self.ADDR,bytearray([0x26,0xB8]))
-       i2c.writeto(self.ADDR,bytearray([0x13,0x07]))
-       i2c.writeto(self.ADDR,bytearray([0x26,0xB9]))
-       time.sleep_ms(800)
-       STA = i2c.readfrom_mem(self.ADDR,0x00,1)
-       #STA = i2c.readfrom(self.ADDR,1)
-       print(STA)
-       data = i2c.readfrom(self.ADDR,5)
-       print(data)
+    def TestDeviceAltimeter(self):
+        i2c.writeto(self.ADDR,bytearray([0x26,0xB8]))
+        i2c.writeto(self.ADDR,bytearray([0x13,0x07]))
+        i2c.writeto(self.ADDR,bytearray([0x26,0xB9]))
+        time.sleep_ms(800)
+        STA = i2c.readfrom_mem(self.ADDR,0x00,1)
+        print(f"Outside Loop STA is {STA}")
+        while(not((STA[0]) & (0x08))):
+            time.sleep_ms(500)
+            STA = i2c.readfrom_mem(self.ADDR,0x00,1)
+            print(STA)
+        data = i2c.readfrom(self.ADDR,5)
+        MSB = data[3]
+        LSB = data[4]
+        temp = (MSB<<8) | (LSB)
+        temp = temp>>4
+        temp = temp/16.0
+        print(temp)
       
         
         #print(TempMSB)
@@ -48,6 +56,6 @@ if __name__ == "__main__":
     i2c = I2C(ID, scl = Pin(SCL), sda = Pin(SDA), freq=100000)
     altimeter = MPL3115A2_Altimeter(i2c, ADDR)
     altimeter.ConnectAndVerify()
-    altimeter.TestDevieAltimeter()
-   
+    altimeter.TestDeviceAltimeter()
+    
     
