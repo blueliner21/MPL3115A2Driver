@@ -24,19 +24,19 @@ class MPL3115A2_Altimeter:
         
     
     def TestDeviceAltimeter(self):
-        i2c.writeto(self.ADDR,bytearray([0x26,0xB8]))
-        i2c.writeto(self.ADDR,bytearray([0x13,0x07]))
-        i2c.writeto(self.ADDR,bytearray([0x26,0xB9]))
-        time.sleep_ms(800)
-        STA = i2c.readfrom_mem(self.ADDR,0x00,1)
+        #i2c.writeto(self.ADDR,bytearray([0x26,0xB8]))
+        self.i2c.writeto(self.ADDR,bytearray([0x13,0x07]))
+        #i2c.writeto(self.ADDR,bytearray([0x26,0xB9]))
+        self.i2c.writeto(self.ADDR,bytearray([0x26,0x3A]))
+        STA = self.i2c.readfrom_mem(self.ADDR,0x00,1)
         print(f"Outside Loop STA is {STA}")
         while(not((STA[0]) & (0x08))):
             time.sleep_ms(500)
-            STA = i2c.readfrom_mem(self.ADDR,0x00,1)
+            STA = self.i2c.readfrom_mem(self.ADDR,0x00,1)
             print(STA)
-        data = i2c.readfrom(self.ADDR,5)
-        MSB = data[3]
-        LSB = data[4]
+        data = self.i2c.readfrom_mem(self.ADDR,0x04,2)
+        MSB = data[0]
+        LSB = data[1]
         temp = (MSB<<8) | (LSB)
         temp = temp>>4
         temp = temp/16.0
@@ -45,6 +45,8 @@ class MPL3115A2_Altimeter:
         
         #print(TempMSB)
         #print(TempLSB)
+        
+ 
 
 
 
@@ -58,4 +60,5 @@ if __name__ == "__main__":
     altimeter.ConnectAndVerify()
     altimeter.TestDeviceAltimeter()
     
+
     
