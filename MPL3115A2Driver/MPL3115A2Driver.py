@@ -127,7 +127,7 @@ if __name__ == "__main__":
     #altimeter.ConnectAndVerify()
     for i in range(10):
         pressure = altimeter.GetSLP()
-        print(pressure[2])
+        print(pressure[1])
         
     
     
