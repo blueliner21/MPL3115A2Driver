@@ -7,6 +7,8 @@ _STATUS = 0x00
 _OUT_P_MSB = 0x01
 _OUT_P_CSB = 0x02
 _OUT_P_LSB = 0x03
+_OUT_T_MSB = 0x04
+_OUT_T_LSB = 0x05
 _WHO_AM_I = 0x0C
 _PT_DATA_CFG = 0x13
 _BAR_IN_MSB = 0x14
@@ -66,12 +68,10 @@ class MPL3115A2_Altimeter:
         MSB = data[0]
         CSB = data[1]
         LSB = data[2]
-        station_pressure = (MSB<<16) | (CSB<<8) | (LSB)
-        station_pressure = station_pressure >> 4
-        station_pressure = station_pressure/4
-        station_pressure_mBar = station_pressure/100
-        station_pressure_inHG = station_pressure/3386
-        station_pressure_PSI = station_pressure/6895
+        station_pressure_Pa = ((MSB<<24) | (CSB<<16) | (LSB<<8)) / 16384.0
+        station_pressure_mBar = station_pressure_Pa/100
+        station_pressure_inHG = station_pressure_Pa/3386
+        station_pressure_PSI = station_pressure_Pa/6895
         return(station_pressure_mBar,station_pressure_inHG,station_pressure_PSI)
         
 
@@ -94,36 +94,20 @@ class MPL3115A2_Altimeter:
         Press_LSB = data[2]
         Temp_MSB = data[3]
         Temp_LSB = data[4]
-        station_pressure = (Press_MSB<<16) | (Press_CSB<<8) | (Press_LSB)
-        station_pressure = station_pressure >> 4
-        station_pressure = station_pressure/4
-        station_pressure_mBar = station_pressure/100
-        temp_c = (Temp_MSB<<8) | (Temp_LSB)
-        temp_c = temp_c>>4
-        temp_c = temp_c/16.0
+        station_pressure_Pa = ((Press_MSB<<24) | (Press_CSB<<16) | (Press_LSB<<8)) / 16384.0
+        station_pressure_mBar = station_pressure_Pa/100
+        temp_c = ((Temp_MSB << 8) | Temp_LSB) / 256.0
         temp_k = temp_c + 273.15
         exp = ((_g*_STATION_ALTITUDE)/(_Rd*temp_k))
-        SLP_mB = station_pressure_mBar * math.exp(exp)
-        SLP_inHG = SLP_mB/33.864
-        SLP_PSI = SLP_mB/68.948
-        return(SLP_mB,SLP_inHG,SLP_PSI)
+        SLP_mBar = station_pressure_mBar * math.exp(exp)
+        SLP_inHG = SLP_mBar/33.864
+        SLP_PSI = SLP_mBar/68.948
+        return(SLP_mBar,SLP_inHG,SLP_PSI)
     
     def GetAltitude(self):
         """
         Obtain SLP adjusted altitude
         """
-        
-        # SLP = self.GetSLP() #We need to get SLP to calibrate altimeter against
-        
-        # SLP_Pa = int((SLP[0] * 100)/2) #SLP[0] is mBar SLP. Altimeter adjustment needs SLP in pascals, mB *100. The two regesisters hold pressure in 2 Pa units, SLP_Pa/2
-        # SLP_Pa_MSB = (SLP_Pa>>8) & 0x00FF
-        # SLP_Pa_LSB = SLP_Pa & 0x00FF
-        
-        # self.i2c.writeto(self.ADDR,bytearray([_BAR_IN_MSB,SLP_Pa_MSB])) #Write MSB offset
-        # self.i2c.writeto(self.ADDR,bytearray([_BAR_IN_LSB,SLP_Pa_LSB])) #Write MSB offset
-        # print(f'SLP_Pa is {SLP_Pa}')
-        # print(f'SLP_mb is {SLP[0]}')
-
         self.i2c.writeto(self.ADDR,bytearray([_PT_DATA_CFG,0x07])) ##Enable Data Flags
         self.i2c.writeto(self.ADDR,bytearray([_CTRL_REG1,0xB9])) ##Altimeter Mode, 128 OSR, Active with aquisition every 1 second         
         STA = self.i2c.readfrom_mem(self.ADDR,0x00,1) 
@@ -137,14 +121,30 @@ class MPL3115A2_Altimeter:
         ALT_CSB = data[1]
         ALT_LSB = data[2]
         
-        station_ALT_meters = (ALT_MSB<<16) | (ALT_CSB<<8) | (ALT_LSB)
-        station_ALT_meters = station_ALT_meters >> 4
-        station_ALT_meters = station_ALT_meters/16
+        station_ALT_meters = (ALT_MSB<<24) | (ALT_CSB<<16) | (ALT_LSB<<8)      
         
+        return station_ALT_meters/65536.0
+
+    def GetTemp(self):
+        """
+        Calculate Sea Level Pressure from MPL3115A2 station pressure. Return a tuple of SLP in millibars, inHG, and PSI.
+        Station pressure is read from sensor along with temperature. SLP is approximated by:
+        SLP = Station_Pressure * exp((_g*_STA_ALTITUDE)/(_Rd*tempK))
+        """
+        self.i2c.writeto(self.ADDR,bytearray([_PT_DATA_CFG,0x07])) ##Enable Data Flags
+        self.i2c.writeto(self.ADDR,bytearray([_CTRL_REG1,0x39])) ##Barometer Mode, 128 OSR, Active with aquisition every 1 second         
+        STA = self.i2c.readfrom_mem(self.ADDR,0x00,1) 
+        while(not((STA[0]) & (0x08))): ##Check to see if measurement is completed
+            time.sleep_ms(500)
+            STA = self.i2c.readfrom_mem(self.ADDR,0x00,1)
         
-        return station_ALT_meters
-        #return(SLP_mB,SLP_inHG,SLP_PSI)
-        
+        data = self.i2c.readfrom_mem(0x60,_OUT_T_MSB,2) 
+        Temp_MSB = data[0]
+        Temp_LSB = data[1]
+        temp_c = ((Temp_MSB << 8) | Temp_LSB) / 256.0
+        temp_f = (temp_c * (9/5)) + 32
+        temp_k = temp_c + 273.15
+        return(temp_c,temp_f,temp_k)   
         
  
 
@@ -161,8 +161,9 @@ if __name__ == "__main__":
     for i in range(10):
         pressure = altimeter.GetSLP()
         altitude = altimeter.GetAltitude()
+        temp = altimeter.GetTemp()
         #print(pressure[1])
-        print(f'Pressure is: {pressure[1]:.2f} inHg and Altitude is: {altitude:.0f} meters')
+        print(f'Pressure: {pressure[0]:.2f} inHg Altitude: {altitude:.2f} meters Temp: {temp[1]:.2f} degrees F')
         
     
     
