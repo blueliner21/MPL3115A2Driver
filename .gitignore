@@ -1,4 +1,8 @@
-.vscode/*
-Documents/*
-*.code-workspace
-*.micropico
+# Ignore the .vscode directory
+.vscode/
+
+# Ignore the Documents directory
+Documents/
+
+# Ignore the .micropico file
+.micropico
