@@ -49,7 +49,7 @@ class MPL3115A2:
         MSB = data[0]
         CSB = data[1]
         LSB = data[2]
-        print(f'MSB = {MSB} CSB = {CSB} LSB = {LSB}')
+       
         station_pressure_Pa = ((MSB<<24) | (CSB<<16) | (LSB<<8)) / 16384.0
         station_pressure_mBar = station_pressure_Pa/100
         station_pressure_inHg = station_pressure_Pa/3386
@@ -127,7 +127,9 @@ class MPL3115A2:
         data = self.i2c.readfrom_mem(0x60,_OUT_T_MSB,2) 
         Temp_MSB = data[0]
         Temp_LSB = data[1]
-        temp_c = ((Temp_MSB << 8) | Temp_LSB) / 256.0
+        #temp_c = ((Temp_MSB << 8) | Temp_LSB) / 256.0
+        print(f'MSB = {Temp_MSB} LSB = {Temp_LSB}')
+        temp_c = ((Temp_MSB << 24) | (Temp_LSB<<16)) / 16777216.0
         temp_f = (temp_c * (9/5)) + 32
         temp_k = temp_c + 273.15
         
@@ -144,13 +146,13 @@ if __name__ == "__main__":
     ADDR = 0x60
     i2c = I2C(ID, scl = Pin(SCL), sda = Pin(SDA), freq=100000)
     altimeter = MPL3115A2(i2c, ADDR)
-    for i in range(10):
+    for i in range(3):
         #pressure = altimeter.GetSLP()
-        pressure = altimeter.GetStationPressure()
+        pressure = altimeter.GetSLP()
         altitude = altimeter.GetAltitude()
         temp = altimeter.GetTemp()
-        #print(f'Pressure: {pressure["SLP_mBar"]:.2f} inHg Altitude: {altitude["alt_meters"]:.2f} meters Temp: {temp["temp_f"]:.2f} degrees F')
-        print(f'Pressure: {pressure["station_pressure_mBar"]:.2f} inHg Altitude: {altitude["alt_meters"]:.2f} meters Temp: {temp["temp_f"]:.2f} degrees F')
+        print(f'Pressure: {pressure["SLP_mBar"]:.2f} inHg Altitude: {altitude["alt_meters"]:.2f} meters Temp: {temp["temp_c"]:.2f} degrees F')
+        
     
     
 
