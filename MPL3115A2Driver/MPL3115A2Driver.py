@@ -1,6 +1,7 @@
 from machine import Pin, I2C
 import time
 import math
+import sys
 
 ## MPL3115A2 Registers
 _STATUS = 0x00
@@ -128,8 +129,11 @@ class MPL3115A2:
         Temp_MSB = data[0]
         Temp_LSB = data[1]
         #temp_c = ((Temp_MSB << 8) | Temp_LSB) / 256.0
-        print(f'MSB = {Temp_MSB} LSB = {Temp_LSB}')
-        temp_c = ((Temp_MSB << 24) | (Temp_LSB<<16)) / 16777216.0
+        if(Temp_MSB & 0x80): #Negative Temp
+            print(f'MSB = {Temp_MSB} LSB = {Temp_LSB}')
+            temp_c = ((Temp_MSB << 24) | (Temp_LSB<<16) - (sys.maxsize *2 )) / 16777216.0
+        else:
+             temp_c = ((Temp_MSB << 24) | (Temp_LSB<<16)) / 16777216.0
         temp_f = (temp_c * (9/5)) + 32
         temp_k = temp_c + 273.15
         
@@ -151,7 +155,7 @@ if __name__ == "__main__":
         pressure = altimeter.GetSLP()
         altitude = altimeter.GetAltitude()
         temp = altimeter.GetTemp()
-        print(f'Pressure: {pressure["SLP_mBar"]:.2f} inHg Altitude: {altitude["alt_meters"]:.2f} meters Temp: {temp["temp_c"]:.2f} degrees F')
+        print(f'Pressure: {pressure["SLP_mBar"]:.2f} inHg Altitude: {altitude["alt_meters"]:.2f} meters Temp: {temp["temp_c"]:.2f} degrees C')
         
     
     
