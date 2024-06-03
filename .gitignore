@@ -6,3 +6,6 @@ Documents/
 
 # Ignore the .micropico file
 .micropico
+
+# Ignore the MPL3115A2Driver.code-workspace file
+MPL3115A2Driver.code-workspace
