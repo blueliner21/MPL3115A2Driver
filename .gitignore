@@ -1,0 +1,4 @@
+.vscode/*
+Documents/*
+*.code-workspace
+*.micropico
