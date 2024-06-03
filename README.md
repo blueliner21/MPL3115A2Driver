@@ -57,3 +57,6 @@ Obtains measured temperature from sensor. Returns a dictionary with the keys:
 - temp_c
 - temp_f
 - temp_k
+
+## License
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/git/git-scm.com/blob/main/MIT-LICENSE.txt) file for details.
