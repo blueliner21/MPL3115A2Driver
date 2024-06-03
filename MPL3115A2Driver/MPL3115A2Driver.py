@@ -16,11 +16,10 @@ _BAR_IN_MSB = 0x14
 _BAR_IN_LSB = 0x15
 _CTRL_REG1 = 0x26
 
-##MPL3115A2 Macros
+##MPL3115A2 Defines
 _device_id = 0xC4
 
 #Constants
-_STATION_ALTITUDE = 1723 #meters
 _g = 9.80665 #Gravitational acceleration 
 _Rd = 287.05 #Specific gas constant for dry air 
 
@@ -72,17 +71,16 @@ class MPL3115A2:
         while(not((STA[0]) & (0x08))): 
             STA = self.i2c.readfrom_mem(self.ADDR,0x00,1)
         
-        data = self.i2c.readfrom_mem(0x60,_OUT_P_MSB,5) 
+        data = self.i2c.readfrom_mem(0x60,_OUT_P_MSB,3) 
         Press_MSB = data[0]
         Press_CSB = data[1]
         Press_LSB = data[2]
-        Temp_MSB = data[3]
-        Temp_LSB = data[4]
+       
         
         station_pressure_Pa = ((Press_MSB<<24) | (Press_CSB<<16) | (Press_LSB<<8)) / 16384.0
         station_pressure_mBar = station_pressure_Pa/100
-        temp_c = ((Temp_MSB << 8) | Temp_LSB) / 256.0
-        temp_k = temp_c + 273.15
+        temp = self.GetTemp()
+        temp_k = temp["temp_k"]
 
         station_altitude = self.GetAltitude()
 
@@ -94,7 +92,7 @@ class MPL3115A2:
     
     def GetAltitude(self):
         """
-        Obtain SLP adjusted altitude. Return a dict of altitudes in meters, and feet
+        Obtain altitude. Return a dict of altitudes in meters, and feet
         Return Dict Keys: 'alt_meters', 'alt_feet'
         """
         self.i2c.writeto(self.ADDR,bytearray([_PT_DATA_CFG,0x07])) 
@@ -128,7 +126,6 @@ class MPL3115A2:
         data = self.i2c.readfrom_mem(0x60,_OUT_T_MSB,2) 
         Temp_MSB = data[0]
         Temp_LSB = data[1]
-        #temp_c = ((Temp_MSB << 8) | Temp_LSB) / 256.0
         if(Temp_MSB & 0x80): #Negative Temp
             print(f'MSB = {Temp_MSB} LSB = {Temp_LSB}')
             temp_c = ((Temp_MSB << 24) | (Temp_LSB<<16) - (sys.maxsize *2 )) / 16777216.0
