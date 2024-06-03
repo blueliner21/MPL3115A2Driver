@@ -155,7 +155,7 @@ if __name__ == "__main__":
         pressure = altimeter.GetSLP()
         altitude = altimeter.GetAltitude()
         temp = altimeter.GetTemp()
-        print(f'Pressure: {pressure["SLP_mBar"]:.2f} inHg Altitude: {altitude["alt_meters"]:.2f} meters Temp: {temp["temp_c"]:.2f} degrees C')
+        print(f'Pressure: {pressure["SLP_inHg"]:.2f} inHg Altitude: {altitude["alt_meters"]:.2f} meters Temp: {temp["temp_c"]:.2f} degrees C')
         
     
     
