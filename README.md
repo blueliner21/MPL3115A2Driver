@@ -1,6 +1,6 @@
-# MPL3115A2 Python Driver
+# MPL3115A2 Micropython Driver
 
-This repository contains a Python driver for the MPL3115A2, a precision altimeter and barometer sensor. The driver allows interfacing with the sensor using I2C to obtain pressure and temperature readings. By default, the sensor is set for max oversampling, requring at least 512 ms between samples.
+This repository contains a micropython driver for the MPL3115A2, a precision altimeter and barometer sensor. The driver allows interfacing with the sensor using I2C to obtain pressure and temperature readings. By default, the sensor is set for max oversampling, requring at least 512 ms between samples.
 
 ## Features
 
@@ -16,20 +16,32 @@ This repository contains a Python driver for the MPL3115A2, a precision altimete
 
 ## Installation
 
-Clone this repository to your local machine:
+Clone this repository to your local machine and copy over to a micropython compatible board running micropython:
 git clone https://github.com/blueliner21/MPL3115A2Driver.git
 
-## Constructor
-The class expects a micropython initilized I2C object and the I2C bus address of the MPL3115A2 sensor. \
-Example constructor:\
+## Usage
+
 ```python
-SDA = 8
-SCL = 9
-ID = 0
-ADDR = 0x60
-i2c = I2C(ID, scl = Pin(SCL), sda = Pin(SDA), freq=100000)
-Sensor = MPL3115A2(i2c, ADDR)
+from machine import I2C, Pin
+from MPL3115A2Driver import MPL3115A2
+
+# Initialize I2C
+i2c = I2C(1, scl=Pin(22), sda=Pin(21))
+
+# Create an instance of the sensor driver
+sensor = MPL3115A2(i2c, ADDR=0x60)
+
+# Get station pressure
+pressure_data = sensor.GetStationPressure()
+print("Station Pressure (mBar):", pressure_data['station_pressure_mBar'])
+print("Station Pressure (inHg):", pressure_data['station_pressure_inHg'])
+print("Station Pressure (PSI):", pressure_data['station_pressure_PSI'])
+
+# Get altitude
+altitude = sensor.GetAltitude()
+print("Altitude (meters):", altitude)
 ```
+
 
 ## Methods
 **ConnectAndVerify()**\
@@ -59,4 +71,7 @@ Obtains measured temperature from sensor. Returns a dictionary with the keys:
 - temp_k
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/git/git-scm.com/blob/main/MIT-LICENSE.txt) file for details.
+This project was created by [blueliner21](https://github.com/blueliner21) and is licensed under the MIT License. See the [LICENSE](https://github.com/git/git-scm.com/blob/main/MIT-LICENSE.txt) file for details.
+
+## Contributing
+Contributions are welcome! Please open an issue or submit a pull request for any changes or enhancements.
